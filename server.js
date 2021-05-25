@@ -1,7 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const bodyParser = require('body-parser');
-const axios = require('axios');
+const fetch = require('node-fetch');
 const app = express()
 const port = 5000
 
@@ -28,21 +28,22 @@ app.get('/get-data', async (req, res) => {
                                         }
                                 }
                      }`
-    const response = await axios({
-        url: 'http://localhost:3000',
+    const response = await fetch('http://localhost:3000', {
         method: 'POST',
-        data: {query: query}
+        body: {query: query}
     })
 
+    const data = await response.json();
+
     if (response.status === 200) {
-        res.status(200).send(JSON.stringify(response.data.data));
+        res.status(200).send(JSON.stringify(data));
     } else {
         res.sendStatus(500)
     }
 })
 
 app.post('/add-movie', async(req, res) => {
-    const data = req.body.data;
+    const data = req.body;
     const typeName = '"' + data.typeName + '"';
     const typeIdQuery = `{
                             allTypes(filter: {name: ${typeName}}) {
@@ -50,14 +51,15 @@ app.post('/add-movie', async(req, res) => {
                             }
                           }`
 
-    const typeIdResponse = await axios({
-        url: 'http://localhost:3000',
+    const typeIdResponse = await fetch('http://localhost:3000', {
         method: 'POST',
-        data: {query: typeIdQuery}
+        body: {query: typeIdQuery}
     })
 
+    const typeResponse = await typeIdResponse.json();
+
     if (typeIdResponse.status === 200) {
-        const typeId = Number(typeIdResponse.data.data.allTypes[0].id);
+        const typeId = Number(typeResponse.allTypes[0].id);
         const name = '"' + data.name + '"';
         const director = '"' + data.director + '"';
         const banner = '"images/no.jpg"';
@@ -70,14 +72,15 @@ app.post('/add-movie', async(req, res) => {
                                                                 director
                                                              }
                                      }`
-        const response = await axios({
-            url: 'http://localhost:3000',
+        const response = await fetch('http://localhost:3000', {
             method: 'POST',
-            data: {query: addMovieMutation}
+            body: {query: addMovieMutation}
         })
 
+        const data = await response.json();
+
         if (response.status === 200) {
-            res.status(200).send(JSON.stringify(response.data.data));
+            res.status(200).send(JSON.stringify(data));
         } else {
             res.sendStatus(500)
         }
@@ -93,14 +96,15 @@ app.delete('/remove-movie', async(req, res) => {
                                 name
                             }
                         }`
-    const response = await axios({
-        url: 'http://localhost:3000',
+    const response = await fetch('http://localhost:3000', {
         method: 'POST',
-        data: {query: removeMovieMutation}
+        body: {query: removeMovieMutation}
     });
 
+    const data = await response.json();
+
     if (response.status === 200) {
-        res.status(200).send(JSON.stringify(response.data.data));
+        res.status(200).send(JSON.stringify(data));
     } else {
         res.sendStatus(500)
     }
