@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <title>Movies On Demand</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script type="text/javascript">
+        let data = [];
+        let currentType;
+
+        function loadData() {
+            axios.get(`http://localhost:5000/get-data`)
+                .then(response => {
+                    data = response.data.allTypes; // obtinem toate datele - le stocam in data
+
+                    const categoriesNav = document.getElementById('categories'); // constanta nav verde
+                    const ul = document.createElement('ul'); //lista care trebuie afisata
+
+                    //populare lista
+                    categoriesNav.innerHTML = '';
+                    categoriesNav.appendChild(ul);
+
+                    //creem ul dinamic - populare lista
+
+                    data.forEach(dataItem => {
+                        const li = document.createElement('li');
+
+                        li.style.padding = '5px';
+                        li.innerHTML = "<a href='#' id='" + dataItem.name + "-type' " +
+                            "onclick='showMovies(event)'>" + dataItem.name + "</a>";
+                        ul.appendChild(li);
+                    })
+                })
+                .catch((error) => {
+                    console.error(error)
+                })
+        }
+
+        function reloadData() {
+            axios.get(`http://localhost:5000/get-data`)
+                .then(response => {
+                    data = response.data.allTypes; // obtinem toate datele - le stocam in data
+
+                    const categoriesNav = document.getElementById('categories'); // constanta nav verde
+                    const ul = document.createElement('ul'); //lista care trebuie afisata
+
+                    //populare lista
+                    categoriesNav.innerHTML = '';
+                    categoriesNav.appendChild(ul);
+
+                    //creem ul dinamic - populare lista
+
+                    data.forEach(dataItem => {
+                        const li = document.createElement('li');
+
+                        li.style.padding = '5px';
+                        li.innerHTML = "<a href='#' id='" + dataItem.name + "-type' " +
+                            "onclick='showMovies(event)'>" + dataItem.name + "</a>";
+                        ul.appendChild(li);
+                    })
+
+                    const typeElement = document.getElementById(currentType + '-type');
+                    typeElement.click();
+                })
+                .catch((error) => {
+                    console.error(error)
+                })
+        }
+
+        function showMovies(event) {
+            if (event) {
+                currentType = event.target.text;
+            }
+
+            const movies = data.filter(dataItem => dataItem.name === currentType)[0].Movies;
+
+            const content = document.getElementById('content');
+            const ul = document.createElement('ul');
+
+            content.innerHTML = '';
+            content.appendChild(ul);
+
+            movies.forEach(movie => {
+                const series = movie.series ? 'Yes' : 'No';
+
+                const li = document.createElement('li');
+                li.innerHTML =
+                    "<div class='movie-details' style='padding: 5px;'>" +
+                    "<div class='remove-movie' style='width: 300px'>" +
+                    "<p style='font-size: 20px;'> <b>" + movie.name + " </b> </p>" +
+                    "<button class='remove-button' id='" + movie.id + "' onclick='removeMovie(event)'> Remove </button>" +
+                    "</div>" +
+                    "<div class='fields-banner' style='padding: 20px;'>" +
+                    "<div>" +
+                    "<img src='" + movie.banner + "' class='movie-banner' onerror=\"this.onerror=null; this.src='images/no.jpg'\"/>" +
+                    "</div>" +
+                    "<div class='fields'>" +
+                    "<p> <b> Director: </b>" + movie.director + "</p>" +
+                    "<p> <b> Length: </b>" + movie.length + " minutes</p>" +
+                    "<p> <b> Series: </b>" + series + "</p>" +
+                    "</div>" +
+                    "</div>" +
+                    "</div>"
+
+                ul.appendChild(li);
+            })
+        }
+
+        function addMovie(event) {
+            if (currentType) {
+                const name = document.getElementById('input-name').value;
+                const director = document.getElementById('input-director').value;
+                const length = document.getElementById('input-length').value;
+                const series = Array.from(document.getElementsByName('option-series')).find(r => r.checked).value === 'yes';
+
+                if (name && director && length && series !== undefined) {
+                    const data = {
+                        name: name,
+                        director: director,
+                        length: length,
+                        series: series,
+                        typeName: currentType
+                    }
+
+                    axios.post(`http://localhost:5000/add-movie`, {
+                        data: data
+                    })
+                        .then(response => {
+                            reloadData();
+                        })
+                        .catch(err => {
+                            console.error(err)
+                        })
+                } else {
+                    alert('The necessary fields have not been completed!')
+                }
+            } else {
+                alert('Please select a movie type!');
+            }
+        }
+
+        function removeMovie(event) {
+            const movieIdToRemove = event.target.id;
+            axios.delete(`http://localhost:5000/remove-movie`, {
+                data: {
+                    movieId: movieIdToRemove
+                }
+            }).then(response => {
+                console.log(`Movie with id ${movieIdToRemove} was removed succesfully!`);
+                reloadData();
+            })
+                .catch((err) => {
+                    console.error(err)
+                })
+        }
+
+    </script>
+</head>
+<body>
+    <header>
+        <span>
+            <h1 class="header-text"> Movies On Demand </h1>
+            <button class="category-button" type="button" onclick="loadData()"><span> Movie Types </span></button>
+        </span>
+    </header>
+    <nav id="categories"></nav>
+    <article id="content"></article>
+    <footer>
+
+        <div id="footer">
+            <form id="insertMovieForm" name="insertMovieForm" method="POST">
+
+                <div id="insert-fields">
+                    <div class="form-group row">
+                        <label class="col-sm-2 col-form-label"> <b> Name: </b> </label>
+                        <div class="col-sm-5">
+                            <label>
+                                <input id="input-name" type="text" class="form-control form-control-sm" name="name"/>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-2 col-form-label"> <b> Director: </b> </label>
+                        <div class="col-sm-5">
+                            <label>
+                                <input id="input-director" type="text" class="form-control form-control-sm" name="director"/>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-2 col-form-label"> <b> Length: </b> </label>
+                        <div class="col-sm-2">
+                            <label>
+                                <input id="input-length" type="text" class="form-control form-control-sm" name="length"/>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-check-inline">
+                        <label class="form-check-label"> <b> Part of a series: </b>
+                            <input id="yes" type="radio" class="form-check-input" name="option-series" value="yes"> Yes
+                            <input id="no" type="radio" class="form-check-input" name="option-series" value="no"> No
+                        </label>
+                    </div>
+
+                <div id="insert-button">
+                    <button class="insert-button" type="button" onmouseenter="addMovie(event)">
+                        <span> Add new movie! </span>
+                    </button>
+                </div>
+                </div>
+            </form>
+        </div>
+    </footer>
+</body>
+</html>
