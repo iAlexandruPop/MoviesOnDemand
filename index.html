@@ -6,16 +6,16 @@
           integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <title>Movies On Demand</title>
     <link rel="stylesheet" type="text/css" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
     <script type="text/javascript">
-        let data = [];
+        let body = [];
         let currentType;
 
         function loadData() {
-            axios.get(`http://localhost:5000/get-data`)
-                .then(response => {
-                    data = response.data.allTypes; // obtinem toate datele - le stocam in data
+            fetch(`http://localhost:5000/get-data`)
+                .then(response => response.json())
+                .then(data => {
+                    body = data.allTypes; // obtinem toate datele - le stocam in data
 
                     const categoriesNav = document.getElementById('categories'); // constanta nav verde
                     const ul = document.createElement('ul'); //lista care trebuie afisata
@@ -26,7 +26,7 @@
 
                     //creem ul dinamic - populare lista
 
-                    data.forEach(dataItem => {
+                    body.forEach(dataItem => {
                         const li = document.createElement('li');
 
                         li.style.padding = '5px';
@@ -41,9 +41,10 @@
         }
 
         function reloadData() {
-            axios.get(`http://localhost:5000/get-data`)
-                .then(response => {
-                    data = response.data.allTypes; // obtinem toate datele - le stocam in data
+            fetch(`http://localhost:5000/get-data`)
+                .then(response => response.json())
+                .then(data => {
+                    body = data.allTypes; // obtinem toate datele - le stocam in data
 
                     const categoriesNav = document.getElementById('categories'); // constanta nav verde
                     const ul = document.createElement('ul'); //lista care trebuie afisata
@@ -54,7 +55,7 @@
 
                     //creem ul dinamic - populare lista
 
-                    data.forEach(dataItem => {
+                    body.forEach(dataItem => {
                         const li = document.createElement('li');
 
                         li.style.padding = '5px';
@@ -126,10 +127,12 @@
                         typeName: currentType
                     }
 
-                    axios.post(`http://localhost:5000/add-movie`, {
-                        data: data
+                    fetch(`http://localhost:5000/add-movie`, {
+                        method: 'POST',
+                        body: data
                     })
-                        .then(response => {
+                        .then(response => response.json())
+                        .then(data => {
                             reloadData();
                         })
                         .catch(err => {
@@ -145,11 +148,14 @@
 
         function removeMovie(event) {
             const movieIdToRemove = event.target.id;
-            axios.delete(`http://localhost:5000/remove-movie`, {
-                data: {
+            fetch(`http://localhost:5000/remove-movie`, {
+                method: 'DELETE',
+                body: {
                     movieId: movieIdToRemove
                 }
-            }).then(response => {
+            })
+                .then(response => response.json())
+                .then(data => {
                 console.log(`Movie with id ${movieIdToRemove} was removed succesfully!`);
                 reloadData();
             })
